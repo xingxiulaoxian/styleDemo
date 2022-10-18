@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>亚克力效果</title>
+  <style>
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      overflow: hidden;
+    }
+    .container {
+      position: relative;
+      height: 100%;
+      width: 100%;
+      background: url(./images/bg.png) no-repeat;
+      background-size: cover;
+    }
+    .mark {
+      position: absolute;
+      top: 100px;
+      left: 100px;
+      height: 300px;
+      width: 400px;
+      background-color: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 0px solid rgba(255, 255, 255, 0.18);
+      box-shadow: rgba(142, 142, 142, 0.19) 0px 6px 15px 0px;
+      -webkit-box-shadow: rgba(142, 142, 142, 0.19) 0px 6px 15px 0px;
+      border-radius: 15px;
+      -webkit-border-radius: 15px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="mark" id="mark"></div>
+  </div>
+  
+  <script>
+    let state = false;
+    const mark = document.querySelector('#mark');
+    const container = document.querySelector('.container');
+    const markHeight = mark.offsetHeight;
+    const markWidth = mark.offsetWidth;
+
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
+
+
+    mark.style.left = `${(containerWidth - markWidth) / 2}px`;
+    mark.style.top = `${(containerHeight - markHeight) / 2}px`;
+
+
+    function throttle(func, interval) {
+      let lastTimeStamp = 0;
+      return function () {
+        let curDate = Date.now();
+        const diff = curDate - lastTimeStamp;
+        if (diff > interval) {
+          func.apply(this, arguments);
+          lastTimeStamp = curDate;
+        }
+      };
+    }
+
+
+    mark.addEventListener('mousedown', function (event) {
+      state = true;
+    });
+    const handle = throttle(function (event) {
+      if (state) {
+        const top = event.y;
+        const left = event.x;
+        mark.style.top = `${top - markHeight / 2}px`;
+        mark.style.left = `${left - markWidth / 2}px`;
+      }
+    }, 10)
+    window.addEventListener('mousemove', handle);
+    
+    mark.addEventListener('mouseup', function (event) {
+      state = false;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拼图</title>
+  <style>
+    body {
+      text-align: center;
+    }
+    .form {
+      margin: 20px auto;
+    }
+    .container {
+      opacity: 1;
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      width: 600px;
+      height: 600px;
+      padding: 5px;
+      margin: auto;
+      box-shadow: 0 0 5px #000;
+      border-radius: 10px;
+      background-size: 610px 610px;
+      background-repeat: no-repeat;
+      background-position: 0px 0px;
+    }
+    .container div {
+      position: relative;
+      opacity: 1;
+      margin: 5px;
+      width: 190px;
+      height: 190px;
+      box-shadow: inset 0 0 5px #000, 0 0 10px #000fff;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #f1f1f1;
+      background-repeat: no-repeat;
+      background-size: 610px 610px;
+      background-image: url('./images/bg1.png');
+    }
+
+    #container {
+      background-image: url('./images/bg1.png');
+    }
+  </style>
+</head>
+<body>
+  <h1>拼图</h1>
+
+  <div class="form">
+    <label>
+      <span>长|宽</span>
+      <input id="widthOrHeight" min="1" max="20" type="range" value="5" />
+    </label>
+    <label>
+      <span>盒子内边距</span>
+      <input id="containerPadding" min="0" max="100" type="range" value="0" />
+    </label>
+    <label>
+      <span>块间隙</span>
+      <input id="blockMargin" min="0" max="100" type="range" value="0" />
+    </label>
+  </div>
+  <div id="container" class="container"></div>
+
+  <script>
+    function Drag() {
+      this.selected = null;
+      this.isBefore = (el1, el2) => {
+        var cur;
+        if (el2.parentNode === el1.parentNode) {
+          for (cur = el1.previousSibling; cur; cur = cur.previousSibling) {
+            if (cur === el2) return true;
+          }
+        } else return false;
+      }
+      this.dragOver = (e) => {
+        // 向前拖拽 向后拖拽
+        // 拖动目标(drop)是不是在拖拽源(drag)的前面
+        if (this.isBefore(this.selected, e.target)){         
+          e.target.parentNode.insertBefore(this.selected, e.target);
+        } else { 
+          e.target.parentNode.insertBefore(this.selected, e.target.nextSibling);
+        }
+      }
+      this.dragEnd = (e) => {
+        this.selected = null;
+      }
+  
+      this.dragStart = (e) => {
+        this.selected = e.target;
+      }
+    }
+
+    const sheet = (function() {
+      // 创建 <style> 标签
+      const style = document.createElement('style');
+      style.setAttribute('data-name', 'myStyle')
+      // 对WebKit hack :(
+      style.appendChild(document.createTextNode(""));
+
+
+      // 将 <style> 元素加到页面中
+      document.head.appendChild(style);
+
+      return style.sheet;
+    })();
+
+    console.log(sheet, sheet.insertRule, sheet.addRule);
+
+    sheet.insertRule("body { background: #f1f1f1 }", sheet.length);
+
+
+    function createView({
+      containerPadding,
+      splitNum,
+      margin,
+    } = {}) {
+      const CONTAINER_PADDING = containerPadding || 0;
+      const MARGIN = margin || 0;
+      const SPLIT_NUM = splitNum || 1;
+      
+      const container = document.querySelector('#container');
+      container.innerHTML = '';
+      container.style.padding = `${CONTAINER_PADDING}px`;
+
+      const dragInstance = new Drag();
+
+      function createDiv(index, splitNum) {
+        const imgWidth = 600 / splitNum - MARGIN * 2;
+        const div = document.createElement('div');
+        div.draggable = 'true';
+
+        const PADDING = MARGIN * 2;
+        const style = {
+          width: `${imgWidth}px`,
+          height: `${imgWidth}px`,
+          margin: `${MARGIN}px`,
+
+          // 1: -(10) -(10)
+          // 2: -(10) -(10 + 110 + 10)
+          // 3: -(10) -(10 + 110 + 10 + 110 + 10)
+          backgroundPosition: `-${
+            index % splitNum * (imgWidth + PADDING) + MARGIN + CONTAINER_PADDING
+          }px -${
+            Math.floor(index / splitNum) * (imgWidth + PADDING) + MARGIN + CONTAINER_PADDING
+          }px`,
+        }
+
+        for(key in style) {
+          div.style[key] = style[key];
+        }
+
+        div.ondragend = dragInstance.dragEnd;
+        div.ondragover = dragInstance.dragOver;
+        div.ondragstart = dragInstance.dragStart;
+
+        return div;
+      }
+
+      function insertDiv() {
+        const all = SPLIT_NUM * SPLIT_NUM;
+        const list = Array(all)
+                      .fill(1)
+                      .map((ele, i) => createDiv(i, SPLIT_NUM))
+                      // .sort(() => Math.random() - 0.5)
+                      ;
+        while(list.length > 0) {
+          container.appendChild(list.shift());
+        }
+      }
+    
+      insertDiv();
+    }
+
+
+
+    const widthOrHeight = document.querySelector('#widthOrHeight');
+    const containerPadding = document.querySelector('#containerPadding');
+    const blockMargin = document.querySelector('#blockMargin');
+
+    let query = {
+      splitNum: 1,
+      containerPadding: 0,
+      margin: 0
+    };
+
+    widthOrHeight.value = query.splitNum;
+    containerPadding.value = query.containerPadding;
+    blockMargin.value = query.margin;
+
+    window.addEventListener('load', () => {
+      createView(query);
+    })
+
+    widthOrHeight.addEventListener('change', (e) => {
+      const value = Number(e.target.value) || 1;
+      query.splitNum = value;
+      createView(query);
+    });
+    containerPadding.addEventListener('change', (e) => {
+      const value = Number(e.target.value);
+      query.containerPadding = value;
+      createView(query);
+    });
+    blockMargin.addEventListener('change', (e) => {
+      const value = Number(e.target.value);
+      query.margin = value;
+      console.log(value, e);
+
+      createView(query);
+    });
+    
+  </script>
+</body>
+</html>
