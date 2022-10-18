@@ -72,10 +72,10 @@
       };
     }
 
-
     mark.addEventListener('mousedown', function (event) {
       state = true;
     });
+
     const handle = throttle(function (event) {
       if (state) {
         const top = event.y;
@@ -84,6 +84,7 @@
         mark.style.left = `${left - markWidth / 2}px`;
       }
     }, 10)
+
     window.addEventListener('mousemove', handle);
     
     mark.addEventListener('mouseup', function (event) {
